@@ -1,0 +1,423 @@
+<Window x:Class="VideoCutterApp.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:wf="clr-namespace:System.Windows.Forms;assembly=System.Windows.Forms"
+        xmlns:c="clr-namespace:VideoCutterApp.Controls"
+        Title="Video Cutter" Width="1420" Height="960" MinWidth="1080" MinHeight="760"
+        Background="{StaticResource BgBrush}" Foreground="{StaticResource TextBrush}"
+        FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="13"
+        WindowStartupLocation="CenterScreen" AllowDrop="True" UseLayoutRounding="True">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- ============================== Header ============================== -->
+        <Grid Grid.Row="0" Margin="20,14,20,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Border Width="40" Height="40" CornerRadius="12" Background="{StaticResource AccentGradient}">
+                <TextBlock Style="{StaticResource Icon}" Text="&#xE8C6;" FontSize="20" Foreground="White"/>
+            </Border>
+            <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Video Cutter" FontFamily="{StaticResource DisplayFont}" FontSize="19" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}"/>
+                    <TextBlock x:Name="FileTitle" Margin="14,2,0,0" FontSize="14" Foreground="{StaticResource MutedBrush}" TextTrimming="CharacterEllipsis" MaxWidth="700"/>
+                    <TextBlock x:Name="SavedText" Margin="10,3,0,0" FontSize="12" Foreground="{StaticResource SuccessBrush}" VerticalAlignment="Center"
+                               ToolTip="Trạng thái làm việc được tự lưu (gắn với đúng video này). Mở lại video là quay về đúng như lúc này."/>
+                </StackPanel>
+                <TextBlock x:Name="FileInfo" Style="{StaticResource Hint}" Text="Cắt và ghép đoạn video chính xác từng khung hình" TextWrapping="NoWrap"/>
+            </StackPanel>
+            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button x:Name="UndoBtn" Style="{StaticResource IconButton}" Content="&#xE7A7;" ToolTip="Hoàn tác (Ctrl+Z)" Margin="0,0,6,0" Click="Undo_Click"/>
+                <Button x:Name="RedoBtn" Style="{StaticResource IconButton}" Content="&#xE7A6;" ToolTip="Làm lại (Ctrl+Y)" Margin="0,0,12,0" Click="Redo_Click"/>
+                <Button x:Name="ShortcutsBtn" Height="36" Margin="0,0,8,0" Click="Shortcuts_Click" ToolTip="Xem phím tắt (F1)">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xE765;" Margin="0,0,8,0"/>
+                        <TextBlock Text="Phím tắt"/>
+                    </StackPanel>
+                </Button>
+                <Button x:Name="OpenBtn" Style="{StaticResource PrimaryButton}" Height="36" Padding="16,0" Click="Open_Click" ToolTip="Mở video (Ctrl+O) — hoặc kéo thả file vào cửa sổ">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xE8E5;" Margin="0,0,8,0" Foreground="White"/>
+                        <TextBlock Text="Mở video" Foreground="White"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <!-- ============================== Main ============================== -->
+        <!-- Cot video rong vua dung ti le video (mac dinh 16:9); phan con lai danh cho panel phai (xem LayoutColumns) -->
+        <Grid x:Name="MainGrid" Grid.Row="1" Margin="20,0,20,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition x:Name="VideoCol" Width="*"/>
+                <ColumnDefinition Width="16"/>
+                <ColumnDefinition x:Name="PanelCol" Width="460"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Video + transport -->
+            <Grid Grid.Column="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Border CornerRadius="14" Background="{StaticResource VideoBgBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="1" ClipToBounds="True">
+                    <Grid>
+                        <WindowsFormsHost x:Name="VideoHost" Visibility="Collapsed" Margin="1">
+                            <wf:Panel x:Name="VideoPanel" BackColor="#0E1118"/>
+                        </WindowsFormsHost>
+                        <!-- Trang thai trong -->
+                        <StackPanel x:Name="EmptyState" VerticalAlignment="Center" HorizontalAlignment="Center">
+                            <Border Width="84" Height="84" CornerRadius="24" Background="{StaticResource AccentSoftBrush}" HorizontalAlignment="Center">
+                                <TextBlock Style="{StaticResource Icon}" Text="&#xE714;" FontSize="38" Foreground="{StaticResource AccentBrush}"/>
+                            </Border>
+                            <TextBlock Text="Kéo thả video vào đây" FontSize="20" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,18,0,6"/>
+                            <TextBlock Style="{StaticResource Hint}" HorizontalAlignment="Center" TextAlignment="Center" FontSize="13.5"
+                                       Text="hoặc bấm “Mở video” (Ctrl+O). Hỗ trợ MP4, MKV, MOV, WEBM, AVI, TS…"/>
+                            <Button Style="{StaticResource PrimaryButton}" HorizontalAlignment="Center" Margin="0,18,0,0" Height="40" Padding="22,0" Click="Open_Click">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE8E5;" Margin="0,0,8,0" Foreground="White"/>
+                                    <TextBlock Text="Mở video" Foreground="White" FontSize="14"/>
+                                </StackPanel>
+                            </Button>
+                            <!-- Phien lam viec gan day -->
+                            <StackPanel x:Name="RecentPanel" Margin="0,30,0,0" Width="560" Visibility="Collapsed">
+                                <Grid Margin="2,0,0,8">
+                                    <TextBlock Text="Tiếp tục làm việc" FontWeight="SemiBold" FontSize="14" VerticalAlignment="Center"/>
+                                    <Button HorizontalAlignment="Right" Style="{StaticResource GhostButton}" FontSize="12" Click="RecentClearAll_Click"
+                                            ToolTip="Xoá toàn bộ lịch sử phiên làm việc (không ảnh hưởng tới file video)">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE74D;" FontSize="12" Margin="0,0,6,0" Foreground="{StaticResource RecordBrush}"/>
+                                            <TextBlock Text="Xoá hết"/>
+                                        </StackPanel>
+                                    </Button>
+                                </Grid>
+                                <ItemsControl x:Name="RecentList">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="0,0,0,6">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Button Click="Recent_Click" Tag="{Binding Path}" HorizontalContentAlignment="Stretch" Padding="12,8"
+                                                        ToolTip="{Binding Path}">
+                                                    <Grid Width="476">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Style="{StaticResource Icon}" Text="&#xE768;" Foreground="{StaticResource AccentBrush}" Margin="0,0,12,0" VerticalAlignment="Center"/>
+                                                        <StackPanel Grid.Column="1">
+                                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                                            <TextBlock Text="{Binding Detail}" Style="{StaticResource Hint}" FontSize="11.5" TextTrimming="CharacterEllipsis"/>
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </Button>
+                                                <Button Grid.Column="1" Style="{StaticResource IconButton}" Width="40" Height="Auto" Margin="6,0,0,0"
+                                                        Content="&#xE74D;" Foreground="{StaticResource RecordBrush}" Tag="{Binding Fingerprint}" Click="RecentDelete_Click"
+                                                        ToolTip="Xoá phiên này khỏi lịch sử (không ảnh hưởng tới file video)"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </StackPanel>
+                        <TextBlock x:Name="LoadingText" Visibility="Collapsed" Text="Đang mở…" FontSize="15" Foreground="{StaticResource MutedBrush}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Grid>
+                </Border>
+
+                <!-- Transport -->
+                <Border x:Name="TransportCard" Grid.Row="1" Style="{StaticResource Card}" Padding="14,10" Margin="0,12,0,0">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <!-- Timecode -->
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBox x:Name="TimeBox" FontFamily="{StaticResource MonoFont}" FontSize="22" Width="196" Padding="8,3" Text="00:00:00.000"
+                                     ToolTip="Gõ thời gian rồi Enter để nhảy tới (vd: 1:23.5, 00:12:03.250, 95)&#x0a;Gõ #1234 để nhảy tới khung 1234"
+                                     KeyDown="TimeBox_KeyDown" GotKeyboardFocus="TimeBox_GotFocus" LostKeyboardFocus="TimeBox_LostFocus"/>
+                            <TextBlock x:Name="FrameText" Style="{StaticResource Hint}" FontFamily="{StaticResource MonoFont}" FontSize="12" Margin="2,4,0,0" Text="khung 0 / 0"/>
+                        </StackPanel>
+                        <!-- Nut dieu khien -->
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Button Style="{StaticResource IconButton}" Content="&#xE892;" ToolTip="Điểm cắt trước (↑)" Click="PrevCut_Click" Margin="0,0,6,0"/>
+                            <Button Style="{StaticResource IconButton}" Content="&#xE76B;" ToolTip="Lùi 1 khung (←)&#x0a;Shift+←: 1 giây • Ctrl+←: 10 giây • Alt+←: keyframe trước" Click="FrameBack_Click" Margin="0,0,6,0"/>
+                            <Button x:Name="PlayBtn" Style="{StaticResource PlayButton}" Content="&#xE768;" ToolTip="Phát / dừng (Space)&#x0a;J / K / L: tua lùi / dừng / tua tới (bấm nhiều lần để nhanh hơn)" Click="Play_Click" Margin="0,0,6,0"/>
+                            <Button Style="{StaticResource IconButton}" Content="&#xE76C;" ToolTip="Tới 1 khung (→)&#x0a;Shift+→: 1 giây • Ctrl+→: 10 giây • Alt+→: keyframe sau" Click="FrameFwd_Click" Margin="0,0,6,0"/>
+                            <Button Style="{StaticResource IconButton}" Content="&#xE893;" ToolTip="Điểm cắt sau (↓)" Click="NextCut_Click" Margin="0,0,12,0"/>
+                            <TextBlock x:Name="SpeedText" Width="44" VerticalAlignment="Center" FontFamily="{StaticResource MonoFont}" Foreground="{StaticResource WarnBrush}" Text=""/>
+                        </StackPanel>
+                        <!-- Am luong -->
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button x:Name="MuteBtn" Style="{StaticResource GhostButton}" FontFamily="{StaticResource IconFont}" FontSize="16" Content="&#xE767;" ToolTip="Tắt / bật tiếng (M)" Click="Mute_Click"/>
+                            <Slider x:Name="VolumeSlider" Width="110" Minimum="0" Maximum="130" Value="100" VerticalAlignment="Center" ValueChanged="Volume_Changed" Focusable="False"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- ============================== Right panel ============================== -->
+            <Grid Grid.Column="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" MinHeight="260"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Doan -->
+                <Border Style="{StaticResource Card}" Padding="14,12">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid>
+                            <StackPanel Orientation="Horizontal">
+                                <Border Style="{StaticResource IconBadge}" Width="30" Height="30" Background="{StaticResource KeepSoftBrush}">
+                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE8C6;" Foreground="{StaticResource KeepBrush}"/>
+                                </Border>
+                                <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock Style="{StaticResource CardTitle}" Text="Các đoạn"/>
+                                    <TextBlock x:Name="KeptSummary" Style="{StaticResource Hint}" FontSize="12" Text="Chưa mở video"/>
+                                </StackPanel>
+                            </StackPanel>
+                            <Button HorizontalAlignment="Right" Style="{StaticResource GhostButton}" Content="Xoá hết điểm cắt" FontSize="12" Click="ClearCuts_Click" ToolTip="Bỏ mọi điểm cắt, giữ nguyên cả video"/>
+                        </Grid>
+                        <!-- Cong cu cat -->
+                        <WrapPanel Grid.Row="1" Margin="0,12,0,10">
+                            <Button Style="{StaticResource ToolButton}" Click="MarkIn_Click" ToolTip="Giữ từ đây (I): bỏ phần phía trước đầu phát trong đoạn hiện tại" Margin="0,0,6,6">
+                                <StackPanel Orientation="Horizontal"><Border Style="{StaticResource KeyCap}"><TextBlock Text="I" FontWeight="Bold" FontSize="11"/></Border><TextBlock Text="Giữ từ đây"/></StackPanel>
+                            </Button>
+                            <Button Style="{StaticResource ToolButton}" Click="MarkOut_Click" ToolTip="Giữ đến đây (O): bỏ phần phía sau đầu phát trong đoạn hiện tại" Margin="0,0,6,6">
+                                <StackPanel Orientation="Horizontal"><Border Style="{StaticResource KeyCap}"><TextBlock Text="O" FontWeight="Bold" FontSize="11"/></Border><TextBlock Text="Giữ đến đây"/></StackPanel>
+                            </Button>
+                            <Button Style="{StaticResource ToolButton}" Click="Split_Click" ToolTip="Chia đôi đoạn tại đầu phát (S hoặc Ctrl+B)" Margin="0,0,6,6">
+                                <StackPanel Orientation="Horizontal"><Border Style="{StaticResource KeyCap}"><TextBlock Text="S" FontWeight="Bold" FontSize="11"/></Border><TextBlock Text="Chia"/></StackPanel>
+                            </Button>
+                            <Button Style="{StaticResource ToolButton}" Click="Toggle_Click" ToolTip="Bỏ / giữ đoạn đang chọn (Delete)" Margin="0,0,6,6">
+                                <StackPanel Orientation="Horizontal"><Border Style="{StaticResource KeyCap}"><TextBlock Text="Del" FontWeight="Bold" FontSize="11"/></Border><TextBlock Text="Bỏ / giữ"/></StackPanel>
+                            </Button>
+                            <ToggleButton x:Name="PreviewToggle" Style="{StaticResource ToggleTool}" Click="Preview_Click" ToolTip="Xem thử kết quả (P): phát liền các đoạn giữ, tự nhảy qua đoạn bỏ" Margin="0,0,6,6">
+                                <StackPanel Orientation="Horizontal"><Border Style="{StaticResource KeyCap}"><TextBlock Text="P" FontWeight="Bold" FontSize="11"/></Border><TextBlock Text="Xem thử kết quả"/></StackPanel>
+                            </ToggleButton>
+                            <Button Style="{StaticResource ToolButton}" Click="CheckJoin_Click" ToolTip="Xem chỗ nối (C): phát 2 giây trước và 2 giây sau chỗ nối gần đầu phát nhất" Margin="0,0,6,6">
+                                <StackPanel Orientation="Horizontal"><Border Style="{StaticResource KeyCap}"><TextBlock Text="C" FontWeight="Bold" FontSize="11"/></Border><TextBlock Text="Xem chỗ nối"/></StackPanel>
+                            </Button>
+                        </WrapPanel>
+                        <ListBox x:Name="SegmentList" Grid.Row="2" Style="{StaticResource SegmentList}" ItemContainerStyle="{StaticResource SegmentItem}"
+                                 SelectionChanged="SegmentList_SelectionChanged" PreviewMouseDoubleClick="SegmentList_DoubleClick">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,2">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Width="32" Height="32" CornerRadius="9" Background="{Binding Badge}" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Number}" FontWeight="Bold" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{Binding BadgeText}"/>
+                                        </Border>
+                                        <StackPanel Grid.Column="1" Margin="12,0,10,0" VerticalAlignment="Center">
+                                            <!-- dong 1: vi tri trong video goc -->
+                                            <TextBlock FontFamily="{StaticResource MonoFont}" FontSize="13" Text="{Binding Range}" Foreground="{Binding RangeBrush}" TextTrimming="CharacterEllipsis"
+                                                       ToolTip="Vị trí trong video gốc"/>
+                                            <!-- dong 2: do dai (dam) + so khung + vi tri trong video xuat -->
+                                            <TextBlock Margin="0,2,0,0" TextTrimming="CharacterEllipsis" FontSize="11.5">
+                                                <Run Text="{Binding Length, Mode=OneWay}" FontFamily="{StaticResource MonoFont}" FontWeight="SemiBold" Foreground="{Binding LengthBrush, Mode=OneWay}"/>
+                                                <Run Text="{Binding Detail, Mode=OneWay}" Foreground="{StaticResource MutedBrush}"/>
+                                            </TextBlock>
+                                            <!-- thanh nho: doan nam o dau trong video goc -->
+                                            <Grid Height="4" Margin="0,5,0,1" ToolTip="Vị trí đoạn trong toàn bộ video gốc">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="{Binding PreW}"/>
+                                                    <ColumnDefinition Width="{Binding LenW}"/>
+                                                    <ColumnDefinition Width="{Binding PostW}"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Border Grid.ColumnSpan="3" CornerRadius="2" Background="{StaticResource Surface3Brush}"/>
+                                                <Border Grid.Column="1" CornerRadius="2" MinWidth="3" Background="{Binding BarBrush}"/>
+                                            </Grid>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Button Style="{StaticResource MiniButton}" Content="&#xE71B;" Tag="{Binding Pos}" Click="MergeUp_Click"
+                                                    IsEnabled="{Binding CanMerge}" ToolTip="Gộp với đoạn phía trên (chỉ khi 2 đoạn liền nhau)"/>
+                                            <CheckBox IsChecked="{Binding Keep, Mode=OneWay}" VerticalAlignment="Center" Focusable="False" Margin="8,0,2,0"
+                                                      Click="KeepCheck_Click" Tag="{Binding Index}" ToolTip="Giữ / tạm bỏ đoạn này (Delete)"/>
+                                            <Button Style="{StaticResource MiniButton}" Content="&#xE70E;" Tag="{Binding Pos}" Click="MoveUp_Click" Margin="6,0,0,0"
+                                                    IsEnabled="{Binding CanUp}" ToolTip="Chuyển lên trên (đổi thứ tự trong video xuất)"/>
+                                            <Button Style="{StaticResource MiniButton}" Content="&#xE70D;" Tag="{Binding Pos}" Click="MoveDown_Click" Margin="4,0,0,0"
+                                                    IsEnabled="{Binding CanDown}" ToolTip="Chuyển xuống dưới"/>
+                                            <Rectangle Width="1" Height="18" Fill="{StaticResource LineBrush}" Margin="8,0"/>
+                                            <Button Style="{StaticResource MiniButton}" Content="&#xE74D;" Tag="{Binding Index}" Click="DeleteSeg_Click"
+                                                    Foreground="{StaticResource RecordBrush}" IsEnabled="{Binding CanDelete}"
+                                                    ToolTip="Xoá đoạn khỏi video xuất (Shift+Delete)&#x0a;Gộp vào phần bỏ bên cạnh để danh sách gọn. Ctrl+Z để hoàn tác."/>
+                                        </StackPanel>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                        <!-- Tong phan giu lai -->
+                        <Border Grid.Row="3" Margin="0,10,0,0" Padding="12,8" CornerRadius="10" Background="{StaticResource KeepSoftBrush}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="Tổng phần giữ lại" FontWeight="SemiBold" FontSize="12.5"/>
+                                    <TextBlock x:Name="TotalDetail" Style="{StaticResource Hint}" FontSize="11.5" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="8,0,0,0">
+                                    <TextBlock x:Name="TotalText" FontFamily="{StaticResource MonoFont}" FontSize="20" FontWeight="SemiBold" Foreground="{StaticResource KeepBrush}" HorizontalAlignment="Right" Text="—"/>
+                                    <Button x:Name="ResetOrderBtn" Style="{StaticResource GhostButton}" FontSize="11.5" Padding="4,0" Content="Về thứ tự gốc" HorizontalAlignment="Right"
+                                            Visibility="Collapsed" Click="ResetOrder_Click" ToolTip="Xếp lại các đoạn theo thứ tự thời gian"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <!-- Xuat -->
+                <Border Grid.Row="1" Style="{StaticResource Card}" Padding="14,12" Margin="0,12,0,0">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                            <Border Style="{StaticResource IconBadge}" Width="30" Height="30">
+                                <TextBlock Style="{StaticResource Icon}" Text="&#xE74E;" Foreground="{StaticResource AccentBrush}"/>
+                            </Border>
+                            <TextBlock Style="{StaticResource CardTitle}" Text="Xuất video" Margin="10,0,0,0"/>
+                        </StackPanel>
+                        <UniformGrid Columns="3">
+                            <RadioButton x:Name="ModeExact" Style="{StaticResource OptionCard}" GroupName="Mode" Checked="Mode_Changed" Margin="0,0,6,8"
+                                         ToolTip="Mã hoá lại 1 lượt: chính xác từng khung, chỗ nối liền mạch tuyệt đối. Giữ độ phân giải, fps, codec gốc; chất lượng gần như gốc.">
+                                <StackPanel>
+                                    <TextBlock Text="Chính xác" FontWeight="SemiBold"/>
+                                    <TextBlock Style="{StaticResource Hint}" FontSize="11.5" Text="như gốc"/>
+                                </StackPanel>
+                            </RadioButton>
+                            <RadioButton x:Name="ModeLossless" Style="{StaticResource OptionCard}" GroupName="Mode" Checked="Mode_Changed" Margin="0,0,6,8"
+                                         ToolTip="Không mã hoá lại, xong trong vài giây, chất lượng 100% gốc. Điểm cắt tự bắt vào keyframe (vạch vàng) nên có thể dư một chút (phần tô vàng trên timeline).">
+                                <StackPanel>
+                                    <TextBlock Text="Giữ gốc" FontWeight="SemiBold"/>
+                                    <TextBlock Style="{StaticResource Hint}" FontSize="11.5" Text="siêu nhanh"/>
+                                </StackPanel>
+                            </RadioButton>
+                            <RadioButton x:Name="ModeSmall" Style="{StaticResource OptionCard}" GroupName="Mode" Checked="Mode_Changed" Margin="0,0,0,8"
+                                         ToolTip="Chính xác từng khung như chế độ đầu, nhưng nén mạnh hơn — file nhỏ, hợp để gửi đi. Chữ vẫn đọc rõ.">
+                                <StackPanel>
+                                    <TextBlock Text="File nhỏ" FontWeight="SemiBold"/>
+                                    <TextBlock Style="{StaticResource Hint}" FontSize="11.5" Text="nén mạnh"/>
+                                </StackPanel>
+                            </RadioButton>
+                        </UniformGrid>
+                        <Grid Margin="0,2,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="OutputBox" FontSize="12" Padding="8,6" ToolTip="File xuất ra"/>
+                            <Button Grid.Column="1" Style="{StaticResource IconButton}" Content="&#xE8B7;" Margin="6,0,0,0" ToolTip="Chọn nơi lưu" Click="BrowseOutput_Click"/>
+                        </Grid>
+                        <TextBlock x:Name="ModeHint" Style="{StaticResource Hint}" FontSize="12" Margin="2,6,0,0"/>
+                        <Grid Margin="0,10,0,0">
+                            <Button x:Name="ExportBtn" Style="{StaticResource PrimaryButton}" Height="42" Click="Export_Click" ToolTip="Xuất video (Ctrl+E)">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE74E;" Margin="0,0,8,0" Foreground="White"/>
+                                    <TextBlock x:Name="ExportBtnText" Text="Xuất video" Foreground="White" FontSize="14"/>
+                                </StackPanel>
+                            </Button>
+                            <Grid x:Name="ExportProgressPanel" Visibility="Collapsed">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock x:Name="ExportStatus" FontSize="12.5" Text="Đang xuất… 0%"/>
+                                    <ProgressBar x:Name="ExportProgress" Height="8" Margin="0,6,0,0" Maximum="1"/>
+                                </StackPanel>
+                                <Button Grid.Column="1" Content="Huỷ" Margin="10,0,0,0" Height="36" Click="CancelExport_Click"/>
+                            </Grid>
+                        </Grid>
+                        <StackPanel x:Name="ExportDonePanel" Orientation="Horizontal" Margin="0,8,0,0" Visibility="Collapsed">
+                            <TextBlock x:Name="ExportDoneText" Style="{StaticResource Hint}" FontSize="12" VerticalAlignment="Center" Foreground="{StaticResource SuccessBrush}" MaxWidth="420" TextWrapping="Wrap"/>
+                            <Button Content="Mở video" Margin="8,0,0,0" Height="30" FontSize="12" Click="OpenResult_Click"/>
+                            <Button Content="Thư mục" Margin="6,0,0,0" Height="30" FontSize="12" Click="OpenResultFolder_Click"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Grid>
+
+        <!-- ============================== Timeline ============================== -->
+        <Border Grid.Row="2" Style="{StaticResource Card}" Margin="20,12,20,0" Padding="12,8,12,10">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid Margin="0,0,0,6">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="Timeline" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="HoverText" Style="{StaticResource Hint}" FontFamily="{StaticResource MonoFont}" FontSize="12" Margin="14,0,0,0" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,14,0">
+                            <Rectangle Width="12" Height="10" RadiusX="2" RadiusY="2" Fill="{StaticResource KeepBrush}" Margin="0,0,5,0"/>
+                            <TextBlock Style="{StaticResource Hint}" FontSize="11.5" Text="giữ" Margin="0,0,10,0"/>
+                            <Rectangle Width="12" Height="10" RadiusX="2" RadiusY="2" Fill="{StaticResource DropBrush}" Margin="0,0,5,0"/>
+                            <TextBlock Style="{StaticResource Hint}" FontSize="11.5" Text="bỏ" Margin="0,0,10,0"/>
+                            <Rectangle Width="2" Height="10" Fill="{StaticResource WarnBrush}" Margin="0,0,5,0"/>
+                            <TextBlock x:Name="KeyLegend" Style="{StaticResource Hint}" FontSize="11.5" Text="keyframe"/>
+                        </StackPanel>
+                        <Button Style="{StaticResource IconButton}" Height="28" Width="32" FontSize="13" Content="&#xE71F;" ToolTip="Thu nhỏ (−)" Click="ZoomOut_Click" Margin="0,0,4,0"/>
+                        <Button Style="{StaticResource IconButton}" Height="28" Width="32" FontSize="13" Content="&#xE8A3;" ToolTip="Phóng to quanh đầu phát (+)&#x0a;Ctrl + lăn chuột: phóng to quanh con trỏ" Click="ZoomIn_Click" Margin="0,0,4,0"/>
+                        <Button Style="{StaticResource IconButton}" Height="28" Width="32" FontSize="13" Content="&#xE9A6;" ToolTip="Xem toàn bộ (Ctrl+0)" Click="ZoomFit_Click"/>
+                    </StackPanel>
+                </Grid>
+                <c:Timeline x:Name="TimelineView" Grid.Row="1" Height="104"/>
+            </Grid>
+        </Border>
+
+        <!-- ============================== Status ============================== -->
+        <Grid Grid.Row="3" Margin="22,8,22,10">
+            <TextBlock x:Name="StatusText" Style="{StaticResource Hint}" FontSize="12" TextTrimming="CharacterEllipsis"
+                       Text="Mẹo: ← → đi từng khung • I / O giữ từ đây / đến đây • S chia đoạn • P xem thử kết quả"/>
+        </Grid>
+
+        <!-- Phim tat (Popup hien tren ca vung video) -->
+        <Popup x:Name="ShortcutsPopup" PlacementTarget="{Binding ElementName=ShortcutsBtn}" Placement="Bottom" HorizontalOffset="-420" VerticalOffset="8"
+               StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade">
+            <Border Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="1" CornerRadius="14" Padding="18,14" Width="560">
+                <Border.Effect><DropShadowEffect BlurRadius="24" ShadowDepth="4" Opacity="0.5"/></Border.Effect>
+                <StackPanel>
+                    <TextBlock Style="{StaticResource CardTitle}" Text="Phím tắt" Margin="0,0,0,10"/>
+                    <ItemsControl x:Name="ShortcutList">
+                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,0,12,7">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="104"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                    <Border Style="{StaticResource KeyCap}" HorizontalAlignment="Left"><TextBlock Text="{Binding Key}" FontFamily="{StaticResource MonoFont}" FontSize="11.5"/></Border>
+                                    <TextBlock Grid.Column="1" Text="{Binding Desc}" FontSize="12.5" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+        </Popup>
+
+        <!-- Nhan ban phim khi khong o o nhap lieu -->
+        <Border x:Name="FocusSink" Focusable="True" Width="0" Height="0" FocusVisualStyle="{x:Null}"/>
+    </Grid>
+</Window>

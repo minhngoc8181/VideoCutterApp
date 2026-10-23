@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <!-- .NET Framework 4.8: co san tren moi Windows 10/11, khong can cai them runtime -->
+    <TargetFramework>net48</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>VideoCutter</AssemblyName>
+    <RootNamespace>VideoCutterApp</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- libmpv-2.dll la ban 64-bit -->
+    <PlatformTarget>x64</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <Version>1.0.0</Version>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <Product>Video Cutter</Product>
+    <Company>Video Cutter</Company>
+    <Description>Cat va ghep doan video chinh xac tung khung hinh (libmpv + FFmpeg)</Description>
+    <NoWarn>$(NoWarn);CS8632;CS0649</NoWarn>
+    <DefaultItemExcludes>$(DefaultItemExcludes);dist\**;_deps\**</DefaultItemExcludes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Runtime.Serialization" />
+  </ItemGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+  </PropertyGroup>
+
+  <!-- Chep ffmpeg.exe, ffprobe.exe, libmpv-2.dll (trong tools\) vao canh VideoCutter.exe -->
+  <ItemGroup>
+    <None Remove="tools\**" />
+    <None Include="tools\ffmpeg.exe" Condition="Exists('tools\ffmpeg.exe')" Link="ffmpeg.exe" CopyToOutputDirectory="PreserveNewest" Visible="false" />
+    <None Include="tools\ffprobe.exe" Condition="Exists('tools\ffprobe.exe')" Link="ffprobe.exe" CopyToOutputDirectory="PreserveNewest" Visible="false" />
+    <None Include="tools\libmpv-2.dll" Condition="Exists('tools\libmpv-2.dll')" Link="libmpv-2.dll" CopyToOutputDirectory="PreserveNewest" Visible="false" />
+    <None Update="README.md" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- tools\ khong nam trong git (file > 100 MB): nhac nguoi dung chay download-deps.ps1 -->
+  <Target Name="WarnMissingTools" BeforeTargets="Build"
+          Condition="!Exists('tools\ffmpeg.exe') Or !Exists('tools\ffprobe.exe') Or !Exists('tools\libmpv-2.dll')">
+    <Warning Text="Thieu tools\ffmpeg.exe / ffprobe.exe / libmpv-2.dll. Chay: powershell -ExecutionPolicy Bypass -File .\download-deps.ps1" />
+  </Target>
+
+</Project>

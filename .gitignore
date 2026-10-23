@@ -1,0 +1,11 @@
+bin
+obj
+_deps
+dist
+*.log
+
+# FFmpeg / libmpv (> 100 MB, GitHub chan) - tai bang: .\download-deps.ps1
+tools/
+ffmpeg.exe
+ffprobe.exe
+libmpv-2.dll
